@@ -1,0 +1,21 @@
+# .bashrc
+
+# User specific aliases and functions
+alias ll='ls -l --color=auto'
+alias ls='ls --color=auto'
+
+alias addadmin='paster --plugin=ckan sysadmin add devadmin --config=/etc/etsin.ini'
+alias clearsource='paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini clearsource'
+alias clearsrc='clearsource $(paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini sources 2> /dev/null | grep "Source id:" | cut -d " " -f 3)'
+alias fetch='ipython --pdb -- $(which paster) --plugin=ckanext-harvest harvester --config=/etc/etsin.ini fetch_consumer'
+alias fetch_nodebug='paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini fetch_consumer'
+alias gather='ipython --pdb -- $(which paster) --plugin=ckanext-harvest harvester --config=/etc/etsin.ini gather_consumer'
+alias gather_nodebug='paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini gather_consumer'
+alias hjob='paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini job'
+alias purge='paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini purge_queues'
+alias pylons_shell='paster --plugin=pylons shell /etc/etsin.ini'
+alias reharvest='hjob $(paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini sources 2> /dev/null | grep "Source id:" | cut -d " " -f 3)'
+alias reindex='paster --plugin=ckan search-index rebuild -r --config=/etc/etsin.ini'
+alias run='paster --plugin=ckanext-harvest harvester --config=/etc/etsin.ini run'
+
+. /usr/local/ckan/pyenv/bin/activate

@@ -1,0 +1,60 @@
+- name: Download Solr
+  get_url: url=https://archive.apache.org/dist/lucene/solr/{{ solr_version }}/solr-{{ solr_version }}.tgz dest=/tmp/
+
+- name: Unarchive Solr
+  unarchive: src=/tmp/solr-{{ solr_version }}.tgz dest=/tmp/ copy=no
+
+- name: Create Solr directory
+  file: path={{ solr_base_dir }} state=directory owner=tomcat group=tomcat mode=0755
+
+- name: Copy Solr items
+  command: "cp -r /tmp/solr-{{ solr_version }}/example/example-DIH/solr/solr/ {{ solr_base_dir }}/collection1"
+
+- name: Copy Solr initiator
+  copy: src={{ item.src }} dest={{ item.dest }} owner=tomcat group=tomcat
+  with_items:
+    - { "src": "initsolr.xml", "dest": "{{ solr_base_dir }}/solr.xml" }
+    - { "src": "stopwords_fi.txt", "dest": "{{ solr_base_dir }}/collection1/conf/lang/" }
+    - { "src": "solr.xml", "dest": "/etc/tomcat/Catalina/localhost/" }
+
+- name: Initialize core
+  shell: echo "name=collection1" >> {{ solr_base_dir }}/collection1/core.properties
+
+- name: Backup Solr schema
+  shell: 'cp {{ solr_base_dir }}/collection1/conf/schema.xml {{ solr_base_dir }}/collection1/conf/schema.xml.$(date +"%Y%m%d")'
+
+- name: Install Solr schema
+  copy: src=files/configs/solr/schema.xml.CKAN_2_4 dest={{ solr_base_dir }}/collection1/conf/schema.xml
+
+- name: Copy more Solr stuff
+  shell: "cp -r {{ item.src }} {{ item.dest }}"
+  with_items:
+    - { "src": "/tmp/solr-{{ solr_version }}/example/resources/log4j.properties", "dest": "{{ solr_base_dir }}/"}
+    - { "src": "/tmp/solr-{{ solr_version }}/bin", "dest": "{{ solr_base_dir }}/"}
+    - { "src": "/tmp/solr-{{ solr_version }}/server/lib/ext/*", "dest": "/usr/share/tomcat/lib"}
+    - { "src": "/tmp/solr-{{ solr_version }}/dist/", "dest": "{{ solr_base_dir }}/lib/"}
+    - { "src": "/tmp/solr-{{ solr_version }}/server/webapps/solr.war", "dest": "{{ solr_base_dir }}/"}
+    - { "src": "/tmp/solr-{{ solr_version }}/server/solr/zoo.cfg", "dest": "{{ solr_base_dir}}/"}
+
+- name: Set Solr logging
+  lineinfile: dest={{ solr_base_dir }}/log4j.properties regexp="^solr.log="
+              line=solr.log=logs/
+              state=present
+              backrefs=true
+              backup=true
+
+- name: Set ownership for tomcat
+  command: "chown -R tomcat: {{ item }}"
+  with_items:
+    - "{{ solr_base_dir }}"
+    - /usr/share/tomcat/lib
+
+- name: Configure Tomcat
+  copy: src=tomcat.conf dest=/etc/tomcat/tomcat.conf backup=yes owner=tomcat group=tomcat
+
+# TODO: Restart to prevent Solr jamming Tomcat in provisioning
+- name: Restart Tomcat
+  service: name=tomcat state=restarted enabled=yes
+
+- name: Wait for Tomcat to start
+  wait_for: port={{ tomcat_port }}

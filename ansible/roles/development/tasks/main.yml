@@ -1,0 +1,52 @@
+---
+
+- block:
+
+    - name: Ensure only single Apache instance is running
+      replace: dest="/etc/httpd/conf/httpd.conf"
+                 regexp="{{ item.regexp }}"
+                 replace="{{ item.replace }}"
+                 backup=true
+      with_items:
+         - { regexp: "^([:space:]*)StartServers[ \t]*[0-9]*$", replace: 'StartServers         1' }
+         - { regexp: "^([:space:]*)ServerLimit[ \t]*[0-9]*$", replace: 'ServerLimit          1' }
+         - { regexp: "^([:space:]*)MaxClients[ \t]*[0-9]*$", replace: 'MaxClients           1' }
+
+    - name: Configure aliases and sourcing of Python virtual environment
+      copy: src={{ item.src }} dest={{ item.dest }} owner={{ item.own }}
+      with_items:
+        - { src: ".bashrc", dest: "/home/{{ default_user }}/", own: "{{ default_user }}" }
+        - { src: ".bashrc_apache", dest: "/usr/share/httpd/.bashrc", own: "apache" }
+
+    - name: Set development values to who.ini
+      ini_file: dest={{ virtual_environment }}/src/ckan/ckan/config/who.ini section={{ item.section }} option={{ item.option }} value={{ item.value }}
+      with_items:
+        - {'section': 'plugin:auth_tkt', 'option': 'secure', 'value': 'false'}
+
+    - name: Add ckan test database
+      become_user: postgres
+      postgresql_db: name=ckan_test
+
+    - name: Add CKAN test database access
+      lineinfile: dest={{ db_base_path }}/data/pg_hba.conf regexp="^local.*ckan_test" line='local  ckan_test  apache  trust'
+      notify:
+        - restart postgres
+
+    - name: Install test requirements
+      pip: requirements={{ dev_dir }}/ckanext-etsin/test-requirements.txt executable="{{ virtual_environment }}/bin/pip"
+
+  when: deployment_environment_id == 'local_dev'
+
+- name: Add admin user
+  shell: '"{{ paster }}" --plugin=ckan user add "{{ admin.username }}" "--config={{ ckan_config_file }}" email="{{ admin.email }}" password="{{ admin.password }}" && touch /usr/local/ckan/.admin_created creates="/usr/local/ckan/.admin_created"'
+
+- name: Add harvest user
+  shell: '"{{ paster }}" --plugin=ckan user add "{{ harvest.username }}" "--config={{ ckan_config_file }}" email="{{ harvest.email }}" password="{{ harvest.password }}" && touch /usr/local/ckan/.harvest_created creates="/usr/local/ckan/.harvest_created"'
+
+- name: Set admin and harvester as sysadmins
+  command: '"{{ paster }}" --plugin=ckan sysadmin add "{{ item }}" "--config={{ ckan_config_file }}"'
+  with_items:
+    - "{{ admin.username }}"
+    - "{{ harvest.username }}"
+  notify:
+    - restart httpd

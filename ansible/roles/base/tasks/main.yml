@@ -1,0 +1,73 @@
+---
+
+- name: Reinstall glibc-common just in case to make Finnish locale available using yum
+  shell: yum -y reinstall glibc-common
+  when: deployment_environment_id == 'local_dev'
+
+- name: Set default locale as LC_ALL to fi_FI.UTF-8
+  lineinfile:
+    dest: /etc/environment
+    state: present
+    line: "LC_ALL=\"fi_FI.UTF-8\""
+
+- name: Set default locale as LC_CTYPE to fi_FI.UTF-8
+  lineinfile:
+    dest: /etc/environment
+    state: present
+    line: "LC_CTYPE=\"fi_FI.UTF-8\""
+
+- name: Set locale LANG to fi_FI.UTF-8
+  shell: localectl set-locale LANG=fi_FI.UTF-8
+
+- name: Set timezone to Europe/Helsinki
+  timezone:
+    name: Europe/Helsinki
+
+- include_role: name=users
+
+- name: Install git
+  yum: name=git state=present
+
+- name: Install vim
+  yum: name=vim state=present
+
+- name: Install httpd with modules
+  yum: name={{ item }} state=present
+  with_items:
+    - httpd
+    - mod_wsgi
+    - mod_ssl
+
+- name: Copy httpd etsin.conf
+  copy: src=files/configs/httpd/etsin-{{ deployment_environment_id}}.conf dest=/etc/httpd/conf.d/etsin.conf
+  notify:
+    - restart httpd
+
+- name: Install supervisord and rabbitmq-server
+  yum: name={{ item }} state=present
+  with_items:
+    - rabbitmq-server
+    - supervisor
+  notify:
+    - restart supervisord
+    - restart rabbitmq-server
+
+- name: Install Java 1.8
+  yum: name=java-1.8.0-openjdk state=present
+
+- name: Install Tomcat 7
+  yum: name=tomcat state=present
+  tags:
+    - solr
+
+- name: create {{ ckan_base_dir }}
+  file: path={{ ckan_base_dir }} state=directory owner=apache group=apache
+
+- name: Disable SELinux
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: Disable firewalld
+  service: name=firewalld state=stopped
+  when: deployment_environment_id == 'local_dev'

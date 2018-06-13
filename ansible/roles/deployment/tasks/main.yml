@@ -1,0 +1,55 @@
+---
+
+  - name: Install etsin.ini
+    copy: src=files/configs/ckan/etsin-{{ deployment_environment_id }}.ini dest={{ ckan_config_file }} mode=600 owner=apache group=apache
+
+  - name: Set database password
+    lineinfile: dest={{ ckan_config_file }} regexp="^sqlalchemy.url = postgresql"
+                line="sqlalchemy.url = postgresql://apache:{{ ckan_database.password }}@127.0.0.1/ckandb"
+                state=present
+                backrefs=true
+                backup=true
+
+  - block:
+      - name: Pull the latest code, pip upgrade with force-reinstall and install requirements
+        script: update_ckan_with_branches.sh
+        register: shell_result
+        ignore_errors: yes
+
+      - name: Print update operation output
+        debug:
+          var: shell_result.stdout_lines
+
+    when: deployment_environment_id == 'local_dev'
+
+  - block:
+
+      - name: Fetch all tags, checkout the parameterized tags, pip upgrade with force-reinstall and install requirements
+        script: update_ckan_with_tags.sh {{ ckanext_etsin_tag }} {{ ckanext_oaipmh_tag }} {{ ckanext_spatial_tag }}
+        register: shell_result
+        become_user: apache
+
+      - name: Print update operation output
+        debug:
+          var: shell_result.stdout_lines
+
+    when: deployment_environment_id != 'local_dev'
+
+  - name: Ensure {{ ckan_base_dir }} is owned by apache
+    file: path={{ ckan_base_dir }} state=directory owner=apache group=apache recurse=yes
+
+  - name: restart httpd
+    service: name=httpd state=restarted enabled=yes
+
+  - name: restart postgres
+    service: name=postgresql-9.3 state=restarted
+
+  - name: restart rabbitmq-server
+    service: name=rabbitmq-server state=restarted enabled=yes
+
+  - name: restart supervisord
+    service: name=supervisord state=restarted enabled=yes
+
+  - name: Rebuild search index
+    command: '"{{ paster }}" --plugin=ckan search-index rebuild "--config={{ ckan_config_file }}"'
+    become_user: apache

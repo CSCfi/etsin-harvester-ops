@@ -1,0 +1,4 @@
+---
+
+- name: Create self-signed SSL cert to /root/sp-cert.pem and private key to /root/sp-key.pem
+  command: openssl req -new -nodes -x509 -subj "/C=FI/ST=Uusimaa/L=Espoo/O=CSC/CN={{ ansible_fqdn }}" -days 3650 -keyout "/root/sp-key.pem" -out "/root/sp-cert.pem" -extensions v3_ca creates="/root/sp-cert.pem"

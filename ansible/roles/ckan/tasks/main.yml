@@ -1,0 +1,162 @@
+---
+
+- name: libxslt and libxml2 development libraries
+  yum: name={{ item }} state=present
+  with_items:
+    - libxslt-devel
+    - libxml2-devel
+
+- name: Install Python libraries
+  yum: name={{ item }} state=present
+  with_items:
+    - python-devel
+    - openldap-devel
+    - python-pip
+    - python-virtualenv
+    - python-psycopg2
+
+- name: Create CKAN directories
+  file: path={{ item }} state=directory owner=apache group=apache
+  with_items:
+    - "{{ ckan_base_dir }}/data"
+    - "{{ ckan_base_dir }}/sstore"
+    - "{{ ckan_base_dir }}/data_tree"
+    - /var/log/ckan
+
+- name: Is virtualenv {{ virtual_environment }} created?
+  stat: path={{ virtual_environment }}
+  register: venv_dir
+
+- name: Create pyenv
+  command: virtualenv -p /usr/bin/python2.7 pyenv chdir={{ ckan_base_dir }}/
+  become_user: apache
+  when: not venv_dir.stat.exists
+
+- name: Update pip
+  pip: name=pip executable="{{ virtual_environment }}/bin/pip" state=latest
+  become_user: apache
+
+- name: Update virtualenv
+  pip: name=virtualenv executable="{{ virtual_environment }}/bin/pip" state=latest
+  become_user: apache
+
+- name: Update setuptools
+  pip: name=setuptools executable="{{ virtual_environment }}/bin/pip" state=latest
+  become_user: apache
+
+- block:
+    - name: Install ipython
+      pip: name=ipython executable="{{ virtual_environment }}/bin/pip" version=5.3.0
+      become_user: apache
+
+    - name: Create dev directory
+      file: path={{ dev_dir }} state=directory owner=apache group=apache
+
+    - name: Create symbolic link from {{ pyenv_src_dir }} directory to {{ dev_dir }} directory
+      file: state=link path={{ pyenv_src_dir }} src={{ dev_dir }} force=yes
+
+  when: deployment_environment_id == 'local_dev'
+
+- name: Create pyenv src directory
+  file: path={{ pyenv_src_dir }} state=directory owner=apache group=apache
+  when: deployment_environment_id != 'local_dev'
+
+- name: Touch ckan log file
+  file: path=/var/log/ckan/ckan.log state=touch owner=apache group=apache
+
+- name: Install etsin.ini
+  copy: src=files/configs/ckan/etsin-{{ deployment_environment_id }}.ini dest={{ ckan_config_file }} mode=600 owner=apache group=apache
+
+- name: Set database password
+  lineinfile: dest={{ ckan_config_file }} regexp="^sqlalchemy.url = postgresql"
+              line="sqlalchemy.url = postgresql://apache:{{ ckan_database.password }}@127.0.0.1/ckandb"
+              state=present
+              backrefs=true
+              backup=true
+
+- name: apache shell
+  shell: chsh -s /bin/bash apache
+
+- name: Ensure supervisord stopped
+  service: name=supervisord state=stopped
+
+- name: Copy harvester.conf
+  copy: src=harvester.conf dest=/etc/supervisord.conf mode=644
+
+- name: Checkout all sources to {{ dev_dir }}
+  git: repo="{{ item.repo }}" dest="{{ item.dest }}" version="{{ item.branch_or_tag }}"
+  with_items: "{{ sourcelist }}"
+  ignore_errors: yes
+  when: deployment_environment_id == 'local_dev'
+
+- name: Install ckan and extensions and their requirements
+  script: "install_ckan-{{ deployment_environment_id }}.sh"
+  when: deployment_environment_id == 'local_dev'
+
+- name: Install ckan and extensions and their requirements
+  script: "install_ckan-{{ deployment_environment_id }}.sh"
+  become_user: apache
+  when: deployment_environment_id != 'local_dev'
+
+- name: Install spatial dependencies
+  yum: name=geos state=present
+
+- name: Install older version of SQLAlchemy
+  pip: name=sqlalchemy==0.9.6 executable="{{ virtual_environment }}/bin/pip"
+  become_user: apache
+
+- name: Ensure CKAN database is present
+  become_user: postgres
+  postgresql_db: name="{{ ckan_database.name }}"
+  tags:
+    - database
+
+- name: Setup database user
+  become_user: postgres
+  postgresql_user: user="{{ ckan_database.user }}" password="{{ ckan_database.password }}" role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE,INHERIT,LOGIN
+  tags:
+    - database
+
+- name: Ensure {{ ckan_base_dir }} is owned by apache
+  file: path={{ ckan_base_dir }} state=directory owner=apache group=apache recurse=yes
+
+- name: Initialize CKAN database
+  command: '"{{ paster }}" --plugin=ckan db init "--config={{ ckan_config_file }}"'
+  become_user: apache
+  tags:
+    - database
+
+- name: Initialize CKAN harvest database
+  command: '"{{ paster }}" --plugin=ckanext-harvest harvester initdb "--config={{ ckan_config_file }}"'
+  become_user: apache
+  tags:
+    - database
+
+- name: Copy shell script for running harvesters daily via cron
+  copy: src=run_etsin_harvesters.sh dest={{ ckan_base_dir }}/run_etsin_harvesters.sh owner=root group=root mode=0755
+  when: deployment_environment_id != 'local_dev'
+
+- name: Create cronjob for the harvester shell script
+  cron:
+    name: "Run harvesters"
+    minute: "00"
+    hour: "4"
+    job: "{{ ckan_base_dir }}/run_etsin_harvesters.sh > /dev/null 2>&1"
+    state: present
+    user: root
+  when: deployment_environment_id != 'local_dev'
+
+- name: Wsgi.py
+  copy: src=wsgi.py dest={{ ckan_base_dir }}/pyenv/bin/ mode=777
+
+- name: Httpd restart
+  service: name=httpd state=restarted enabled=yes
+
+- name: Rebuild search index
+  command: '"{{ paster }}" --plugin=ckan search-index rebuild "--config={{ ckan_config_file }}"'
+  become_user: apache
+  tags:
+    - database
+
+- name: Ensure supervisord restarted
+  service: name=supervisord state=restarted

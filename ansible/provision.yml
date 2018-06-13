@@ -1,0 +1,25 @@
+---
+
+- hosts: webserver
+  become: yes
+  roles:
+    - base
+    - postgresql
+    - solr
+    - ssl
+    - ckan
+    - development
+    - update_packages
+
+  handlers:
+    - name: restart httpd
+      service: name=httpd state=restarted enabled=yes
+
+    - name: restart postgres
+      service: name=postgresql-9.3 state=restarted
+
+    - name: restart rabbitmq-server
+      service: name=rabbitmq-server state=restarted enabled=yes
+
+    - name: restart supervisord
+      service: name=supervisord state=restarted enabled=no

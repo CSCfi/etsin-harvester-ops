@@ -1,0 +1,16 @@
+---
+
+# For local_dev environment, this playbook pulls the latest code
+# from the release branches of the respective code repositories.
+
+# For other environments, in order to run this playbook one needs
+# to define variables for the tags of the release branches of the
+# respective code repositories. For example:
+#
+# ansible-playbook -i inventories/test/hosts deploy.yml --extra-vars "ckanext_etsin_tag=v0.0.1 ckanext_oaipmh_tag=v0.0.1 ckanext_spatial_tag=v0.0.1 ssh_user=<user>"
+
+- hosts: webserver
+  become: yes
+  roles:
+    - role: update_packages
+    - role: deployment

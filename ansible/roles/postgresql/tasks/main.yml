@@ -1,0 +1,80 @@
+---
+
+- name: Install PostgreSQL 9.3 repository
+  yum: name="http://yum.postgresql.org/9.3/redhat/rhel-7-x86_64/pgdg-centos93-9.3-2.noarch.rpm" state=present
+  when: deployment_environment_id == 'local_dev'
+
+- name: Install PostgreSQL 9.3
+  yum: name={{ item }} state=present
+  with_items:
+    - postgresql93
+    - postgresql93-server
+    - postgresql93-devel
+    - postgresql93-contrib
+
+- name: Create/ensure data directory {{ data_dir_base_path }}
+  file: path={{ data_dir_base_path }} state=directory owner=apache group=apache mode=0755
+
+- name: Create database data directory {{ db_data_path }}
+  file: path={{ db_data_path }} state=directory owner=postgres group=postgres mode=700
+
+- name: Initialize Postgres database to {{ db_data_path }}
+  command: /usr/pgsql-9.3/bin/pg_ctl initdb -D {{ db_data_path }} creates={{ db_data_path }}/postgresql.conf
+  become_user: postgres
+
+- name: Shutdown Postgresql
+  systemd: name=postgresql-9.3 enabled=yes state=stopped
+
+- name: Create custom postgres service file that refers to the original one and set correct PGDATA location
+  copy:
+    dest: /etc/systemd/system/postgresql-9.3.service
+    content: |
+      .include /lib/systemd/system/postgresql-9.3.service
+      [Service]
+      Environment=PGDATA={{ db_data_path }}
+
+- name: Systemctl daemon-reload
+  shell: "systemctl daemon-reload"
+
+- name: Copy Postgres host based authentication configuration {{ db_data_path }}/pg_hba.conf
+  copy: src=files/configs/postgresql/pg_hba.conf dest={{ db_data_path }}/pg_hba.conf owner=postgres group=postgres
+
+- name: Change Postgres configuration wal_level to replica
+  lineinfile:
+    dest: "{{ db_base_path }}/data/postgresql.conf"
+    state: present
+    regexp: "#wal_level ="
+    line: "wal_level = archive"
+
+- name: Change Postgres configuration max_wal_senders to 1
+  lineinfile:
+    dest: "{{ db_base_path }}/data/postgresql.conf"
+    state: present
+    regexp: "#max_wal_senders ="
+    line: "max_wal_senders = 1"
+
+- name: Change Postgres configuration archive_mode to on
+  lineinfile:
+    dest: "{{ db_base_path }}/data/postgresql.conf"
+    state: present
+    regexp: "#archive_mode ="
+    line: "archive_mode = on"
+
+- name: Change Postgres configuration archive_command
+  lineinfile:
+    dest: "{{ db_base_path }}/data/postgresql.conf"
+    state: present
+    regexp: "#archive_command ="
+    line: "archive_command = 'test ! -f {{ db_archive_path }}/%f && cp %p {{ db_archive_path }}/%f && chmod 660 {{ db_archive_path }}/%f'"
+
+- name: Create wal archive directory
+  file: path={{ db_archive_path }} state=directory owner=postgres group=postgres mode=0760 recurse=yes
+
+- name: Create database backup directory
+  file: path={{ db_backup_path }} state=directory owner=postgres group=postgres mode=0760 recurse=yes
+
+- name: Restart Postgresql
+  systemd: name=postgresql-9.3 state=restarted daemon_reload=yes
+
+- name: Symbolic link for pgsql-config
+  file: src=/usr/pgsql-9.3/bin/pg_config dest=/usr/bin/pg_config state=link

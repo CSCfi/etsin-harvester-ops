@@ -1,0 +1,9 @@
+---
+
+repobase: "https://github.com/CSCfi"
+sourcelist:
+  - { repo: "{{ repobase }}/metax-ckan.git", dest: "{{ pyenv_src_dir }}/ckan", branch_or_tag: "ckan-2.6.2" }
+  - { repo: "{{ repobase }}/metax-ckanext-harvest.git", dest: "{{ pyenv_src_dir }}/ckanext-harvest", branch_or_tag: "v1.1.0" }
+  - { repo: "{{ repobase }}/metax-ckanext-oaipmh.git", dest: "{{ pyenv_src_dir }}/ckanext-oaipmh", branch_or_tag: "master" }
+  - { repo: "{{ repobase }}/metax-ckanext-spatial.git", dest: "{{ pyenv_src_dir }}/ckanext-spatial", branch_or_tag: "master"}
+  - { repo: "{{ repobase }}/metax-ckanext-etsin", dest: "{{ pyenv_src_dir }}/ckanext-etsin", branch_or_tag: "master" }
