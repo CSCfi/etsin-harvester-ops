@@ -25,8 +25,13 @@
 
 - include_role: name=users
 
-- name: Install git
-  yum: name=git state=present
+- name: Install necessary packages
+  yum: name={{ item }} state=present
+  with_items:
+    - gcc
+    - gcc-c++
+    - python-devel
+    - git
 
 - name: Install vim
   yum: name=vim state=present
