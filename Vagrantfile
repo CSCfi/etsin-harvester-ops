@@ -13,7 +13,7 @@ if [ ! -f /vagrant_bootstrap_done.info ]; then
   sudo pip install ansible==2.4.3.0
   sudo touch /vagrant_bootstrap_done.info
 fi
-cd /etsin/ansible && ansible-playbook provision.yml
+cd /etsin/ansible && ansible-playbook site_provision.yml
 SCRIPT
 
 Vagrant.configure("2") do |config|
