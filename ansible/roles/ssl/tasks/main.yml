@@ -8,21 +8,21 @@
   lineinfile:
     dest: "/etc/httpd/conf.d/ssl.conf"
     state: present
-    regexp: "SSLCertificateFile /etc"
+    regexp: "^SSLCertificateFile /"
     line: "SSLCertificateFile {{ ssl_certificate_file }}"
 
 - name: Set httpd ssl conf SSLCertificateKeyFile
   lineinfile:
     dest: "/etc/httpd/conf.d/ssl.conf"
     state: present
-    regexp: "SSLCertificateKeyFile /etc"
+    regexp: "^SSLCertificateKeyFile /"
     line: "SSLCertificateKeyFile {{ ssl_certificate_key_file }}"
 
 - name: Set httpd ssl conf SSLCACertificateFile
   lineinfile:
     dest: "/etc/httpd/conf.d/ssl.conf"
     state: present
-    regexp: "#SSLCACertificateFile /etc"
+    regexp: "^#?SSLCACertificateFile /"
     line: "SSLCACertificateFile {{ ssl_ca_certificate_file }}"
   when: deployment_environment_id in ['staging', 'production']
 
