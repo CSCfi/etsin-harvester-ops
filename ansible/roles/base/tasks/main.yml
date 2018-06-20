@@ -43,27 +43,35 @@
     - mod_wsgi
     - mod_ssl
 
+- name: Start httpd
+  service: name=httpd state=started enabled=yes
+
 - name: Copy httpd etsin.conf
   copy: src=files/configs/httpd/etsin-{{ deployment_environment_id}}.conf dest=/etc/httpd/conf.d/etsin.conf
-  notify:
-    - restart httpd
+
+- name: restart httpd
+  service: name=httpd state=restarted enabled=yes
 
 - name: Install supervisord and rabbitmq-server
   yum: name={{ item }} state=present
   with_items:
     - rabbitmq-server
     - supervisor
-  notify:
-    - restart supervisord
-    - restart rabbitmq-server
+
+- name: Start rabbitmq-server
+  service: name=rabbitmq-server enabled=yes state=started
+
+- name: Start supervisord
+  service: name=supervisord enabled=yes state=started
 
 - name: Install Java 1.8
   yum: name=java-1.8.0-openjdk state=present
 
 - name: Install Tomcat 7
   yum: name=tomcat state=present
-  tags:
-    - solr
+
+- name: Start Tomcat 7
+  service: name=tomcat enabled=yes state=started
 
 - name: create {{ ckan_base_dir }}
   file: path={{ ckan_base_dir }} state=directory owner=apache group=apache

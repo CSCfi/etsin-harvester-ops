@@ -26,5 +26,5 @@
     line: "SSLCACertificateFile {{ ssl_ca_certificate_file }}"
   when: deployment_environment_id in ['staging', 'production']
 
-- name: restart httpd
+- name: Restart httpd
   service: name=httpd state=restarted enabled=yes

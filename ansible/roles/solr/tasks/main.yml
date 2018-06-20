@@ -52,7 +52,6 @@
 - name: Configure Tomcat
   copy: src=tomcat.conf dest=/etc/tomcat/tomcat.conf backup=yes owner=tomcat group=tomcat
 
-# TODO: Restart to prevent Solr jamming Tomcat in provisioning
 - name: Restart Tomcat
   service: name=tomcat state=restarted enabled=yes
 

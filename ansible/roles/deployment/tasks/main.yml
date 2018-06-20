@@ -42,7 +42,7 @@
     service: name=httpd state=restarted enabled=yes
 
   - name: restart postgres
-    service: name=postgresql-9.3 state=restarted
+    service: name=postgresql-9.3 state=restarted enabled=yes
 
   - name: restart rabbitmq-server
     service: name=rabbitmq-server state=restarted enabled=yes

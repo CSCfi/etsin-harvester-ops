@@ -149,7 +149,7 @@
 - name: Wsgi.py
   copy: src=wsgi.py dest={{ ckan_base_dir }}/pyenv/bin/ mode=777
 
-- name: Httpd restart
+- name: Restart httpd
   service: name=httpd state=restarted enabled=yes
 
 - name: Rebuild search index
@@ -159,4 +159,4 @@
     - database
 
 - name: Ensure supervisord restarted
-  service: name=supervisord state=restarted
+  service: name=supervisord state=restarted enabled=yes

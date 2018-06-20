@@ -29,8 +29,6 @@
 
     - name: Add CKAN test database access
       lineinfile: dest={{ db_base_path }}/data/pg_hba.conf regexp="^local.*ckan_test" line='local  ckan_test  apache  trust'
-      notify:
-        - restart postgres
 
     - name: Install test requirements
       pip: requirements={{ dev_dir }}/ckanext-etsin/test-requirements.txt executable="{{ virtual_environment }}/bin/pip"
@@ -48,5 +46,9 @@
   with_items:
     - "{{ admin.username }}"
     - "{{ harvest.username }}"
-  notify:
-    - restart httpd
+
+- name: Restart httpd
+  service: name=httpd state=restarted enabled=yes
+
+- name: Restart postgresql
+  service: name=postgresql-9.3 state=restarted enabled=yes
