@@ -3,4 +3,4 @@
 - hosts: all
   become: yes
   roles:
-    - { role: spacewalk, when: "deployment_environment_id not in ['local_dev', 'staging', 'production']" }
+    - { role: spacewalk, when: "deployment_environment_id not in ['local_dev', 'production']" }

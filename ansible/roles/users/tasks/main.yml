@@ -13,4 +13,4 @@
       copy: src=files/public_keys/{{ item }}.pub dest=/home/{{ item }}/.ssh/authorized_keys owner={{ item }} mode=0700
       with_items: "{{ os_users }}"
 
-  when: deployment_environment_id not in ['local_dev', 'staging', 'production']
+  when: deployment_environment_id not in ['local_dev', 'production']
