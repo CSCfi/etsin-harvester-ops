@@ -12,5 +12,5 @@
 - hosts: webserver
   become: yes
   roles:
-    - role: update_packages
+    - { role: update_packages, when: "deployment_environment_id not in ['production']" }
     - role: deployment

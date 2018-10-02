@@ -5,6 +5,7 @@
   roles:
     - base
     - postgresql
+    - backup
     - solr
     - ssl
     - ckan

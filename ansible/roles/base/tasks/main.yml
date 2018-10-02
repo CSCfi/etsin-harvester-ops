@@ -16,8 +16,8 @@
     state: present
     line: "LC_CTYPE=\"fi_FI.UTF-8\""
 
-- name: Set locale LANG to fi_FI.UTF-8
-  shell: localectl set-locale LANG=fi_FI.UTF-8
+- name: Set locale LANG to en_US.UTF-8
+  shell: localectl set-locale LANG=en_US.UTF-8
 
 - name: Set timezone to Europe/Helsinki
   timezone:

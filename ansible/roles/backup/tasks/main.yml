@@ -1,0 +1,13 @@
+---
+
+  - name: Copy backup script in place
+    template: src=templates/db_backup.sh dest={{ db_backup_dir_base_path }} owner=postgres group=postgres mode=0770
+
+  - name: Create cronjob for running backup script
+    cron:
+      name: "Backup ckan_{{ deployment_environment_id }} database and clean database backups and archives"
+      minute: "30"
+      hour: "2"
+      job: "{{ db_backup_dir_base_path }}/db_backup.sh ckan_{{ deployment_environment_id }} pg93 5432 {{ db_archive_path }} {{ db_backup_path }} > /dev/null 2>&1"
+      state: present
+      user: postgres
