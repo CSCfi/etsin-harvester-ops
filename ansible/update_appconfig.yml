@@ -1,0 +1,10 @@
+- hosts: webserver
+  become: yes
+  roles:
+    - app_config
+  tasks:
+    - name: restart httpd
+      service: name=httpd state=restarted enabled=yes
+
+    - name: restart supervisord
+      service: name=supervisord state=restarted enabled=yes

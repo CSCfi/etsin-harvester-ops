@@ -1,0 +1,9 @@
+- name: Install etsin.ini
+  copy: src=files/configs/ckan/etsin-{{ deployment_environment_id }}.ini dest={{ ckan_config_file }} mode=600 owner=apache group=apache
+
+- name: Set database password
+  lineinfile: dest={{ ckan_config_file }} regexp="^sqlalchemy.url = postgresql"
+              line="sqlalchemy.url = postgresql://apache:{{ ckan_database.password }}@127.0.0.1/ckandb"
+              state=present
+              backrefs=true
+              backup=true
