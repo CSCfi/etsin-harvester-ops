@@ -70,9 +70,6 @@
 - name: Create wal archive directory
   file: path={{ db_archive_path }} state=directory owner=postgres group=postgres mode=0760 recurse=yes
 
-- name: Create database backup directory
-  file: path={{ db_backup_path }} state=directory owner=postgres group=postgres mode=0760 recurse=yes
-
 - name: Restart Postgresql
   systemd: name=postgresql-9.3 state=restarted daemon_reload=yes enabled=yes
 
