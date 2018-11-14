@@ -10,7 +10,7 @@ if [ ! -f /vagrant_bootstrap_done.info ]; then
   sudo yum -y install epel-release python-devel libffi-devel openssl-devel git gcc
   sudo yum -y install python-pip
   sudo pip install pip --upgrade
-  sudo pip install ansible==2.4.3.0
+  sudo pip install ansible
   sudo touch /vagrant_bootstrap_done.info
 fi
 cd /etsin/ansible && ansible-playbook site_provision.yml
@@ -21,14 +21,9 @@ Vagrant.configure("2") do |config|
     etsin.vm.box = "centos/7"
     etsin.vm.network :private_network, ip: "10.10.10.20"
 
-    case RUBY_PLATFORM
-    when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-        # Fix Windows file rights, otherwise Ansible tries to execute files
-        etsin.vm.synced_folder "./", "/etsin", :mount_options => ["dmode=755","fmode=644"]
-    else
-        # Basic VM synced folder mount
-        etsin.vm.synced_folder "", "/etsin"
-    end
+    # Basic VM synced folder mount
+    etsin.vm.synced_folder "./ansible", "/etsin/ansible"
+    etsin.vm.synced_folder "./sources", "/etsin/sources"
 
     etsin.vm.provision "shell", inline: $script
     etsin.vm.provider "virtualbox" do |vbox|

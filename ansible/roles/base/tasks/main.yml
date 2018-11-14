@@ -26,22 +26,22 @@
 - include_role: name=users
 
 - name: Install necessary packages
-  yum: name={{ item }} state=present
-  with_items:
-    - gcc
-    - gcc-c++
-    - python-devel
-    - git
-
-- name: Install vim
-  yum: name=vim state=present
+  yum:
+    state: latest
+    name:
+      - gcc
+      - gcc-c++
+      - python-devel
+      - git
+      - vim
 
 - name: Install httpd with modules
-  yum: name={{ item }} state=present
-  with_items:
-    - httpd
-    - mod_wsgi
-    - mod_ssl
+  yum:
+    state: present
+    name:
+      - httpd
+      - mod_wsgi
+      - mod_ssl
 
 - name: Start httpd
   service: name=httpd state=started enabled=yes
@@ -53,10 +53,11 @@
   service: name=httpd state=restarted enabled=yes
 
 - name: Install supervisord and rabbitmq-server
-  yum: name={{ item }} state=present
-  with_items:
-    - rabbitmq-server
-    - supervisor
+  yum:
+    state: present
+    name:
+      - rabbitmq-server
+      - supervisor
 
 - name: Start rabbitmq-server
   service: name=rabbitmq-server enabled=yes state=started

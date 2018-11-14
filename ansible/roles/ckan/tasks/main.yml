@@ -1,27 +1,32 @@
 ---
 
 - name: libxslt and libxml2 development libraries
-  yum: name={{ item }} state=present
-  with_items:
-    - libxslt-devel
-    - libxml2-devel
+  yum:
+    state: present
+    name:
+      - libxslt-devel
+      - libxml2-devel
 
 - name: Install Python libraries
-  yum: name={{ item }} state=present
-  with_items:
-    - python-devel
-    - openldap-devel
-    - python-pip
-    - python-virtualenv
-    - python-psycopg2
+  yum:
+    state: present
+    name:
+      - python-devel
+      - openldap-devel
+      - python-pip
+      - python-virtualenv
+      - python-psycopg2
 
 - name: Create CKAN directories
-  file: path={{ item }} state=directory owner=apache group=apache
-  with_items:
-    - "{{ ckan_base_dir }}/data"
-    - "{{ ckan_base_dir }}/sstore"
-    - "{{ ckan_base_dir }}/data_tree"
-    - /var/log/ckan
+  file:
+    state: directory
+    owner: apache
+    group: apache
+    path:
+      - "{{ ckan_base_dir }}/data"
+      - "{{ ckan_base_dir }}/sstore"
+      - "{{ ckan_base_dir }}/data_tree"
+      - /var/log/ckan
 
 - name: Is virtualenv {{ virtual_environment }} created?
   stat: path={{ virtual_environment }}

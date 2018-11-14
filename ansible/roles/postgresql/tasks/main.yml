@@ -5,12 +5,13 @@
   when: deployment_environment_id == 'local_dev'
 
 - name: Install PostgreSQL 9.3
-  yum: name={{ item }} state=present
-  with_items:
-    - postgresql93
-    - postgresql93-server
-    - postgresql93-devel
-    - postgresql93-contrib
+  yum:
+    state: present
+    name:
+      - postgresql93
+      - postgresql93-server
+      - postgresql93-devel
+      - postgresql93-contrib
 
 - name: Create/ensure data directory {{ data_dir_base_path }}
   file: path={{ data_dir_base_path }} state=directory owner=apache group=apache mode=0755
