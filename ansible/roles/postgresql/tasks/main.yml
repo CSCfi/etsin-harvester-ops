@@ -71,8 +71,7 @@
 - name: Create wal archive directory
   file: path={{ db_archive_path }} state=directory owner=postgres group=postgres mode=0760 recurse=yes
 
-- name: Restart Postgresql
-  systemd: name=postgresql-9.3 state=restarted daemon_reload=yes enabled=yes
+- include_role: name=pg_hba_conf
 
 - name: Symbolic link for pgsql-config
   file: src=/usr/pgsql-9.3/bin/pg_config dest=/usr/bin/pg_config state=link
