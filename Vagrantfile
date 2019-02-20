@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
 
     # Basic VM synced folder mount
     etsin.vm.synced_folder "./ansible", "/etsin/ansible"
-    etsin.vm.synced_folder "./sources", "/etsin/sources"
+    etsin.vm.synced_folder "./sources", "/etsin/sources", create: true
 
     etsin.vm.provision "shell", inline: $script
     etsin.vm.provider "virtualbox" do |vbox|
