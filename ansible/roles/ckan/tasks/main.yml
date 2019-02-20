@@ -22,11 +22,12 @@
     state: directory
     owner: apache
     group: apache
-    path:
-      - "{{ ckan_base_dir }}/data"
-      - "{{ ckan_base_dir }}/sstore"
-      - "{{ ckan_base_dir }}/data_tree"
-      - /var/log/ckan
+    path: "{{ item }}"
+  with_items:
+    - "{{ ckan_base_dir }}/data"
+    - "{{ ckan_base_dir }}/sstore"
+    - "{{ ckan_base_dir }}/data_tree"
+    - /var/log/ckan
 
 - name: Is virtualenv {{ virtual_environment }} created?
   stat: path={{ virtual_environment }}
