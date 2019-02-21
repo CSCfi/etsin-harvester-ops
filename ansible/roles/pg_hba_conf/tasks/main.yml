@@ -1,2 +1,5 @@
 - name: Copy Postgres host based authentication configuration {{ db_data_path }}/pg_hba.conf
   template: src=files/configs/postgresql/pg_hba.conf dest={{ db_data_path }}/pg_hba.conf owner=postgres group=postgres
+
+- name: Restart Postgresql
+  systemd: name=postgresql-9.3 state=restarted daemon_reload=yes enabled=yes
