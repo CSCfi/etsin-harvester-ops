@@ -9,7 +9,8 @@ if [ ! -f /vagrant_bootstrap_done.info ]; then
   sudo yum update
   sudo yum -y install epel-release python-devel libffi-devel openssl-devel git gcc
   sudo yum -y install python-pip
-  sudo pip install pip --upgrade
+  sudo pip install pip --upgrade pip
+  sudo pip install setuptools --upgrade
   sudo pip install ansible
   sudo touch /vagrant_bootstrap_done.info
 fi
