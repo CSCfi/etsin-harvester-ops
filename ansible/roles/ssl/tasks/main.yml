@@ -18,8 +18,8 @@
   lineinfile:
     dest: "/etc/httpd/conf.d/ssl.conf"
     state: present
-    regexp: "^#?SSLCACertificateFile /"
-    line: "SSLCACertificateFile {{ ssl_ca_certificate_file }}"
+    regexp: "^#?SSLCertificateChainFile /"
+    line: "SSLCertificateChainFile {{ ssl_certificate_chain_file }}"
 
 - name: Restart httpd
   service: name=httpd state=restarted enabled=yes
