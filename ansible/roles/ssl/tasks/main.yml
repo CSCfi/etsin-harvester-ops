@@ -14,7 +14,7 @@
     regexp: "^SSLCertificateKeyFile /"
     line: "SSLCertificateKeyFile {{ ssl_certificate_key_file }}"
 
-- name: Set httpd ssl conf SSLCACertificateFile
+- name: Set httpd ssl conf SSLCertificateChainFile
   lineinfile:
     dest: "/etc/httpd/conf.d/ssl.conf"
     state: present
