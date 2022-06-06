@@ -1,9 +1,5 @@
 ---
 
-- name: Create self-signed SSL cert to /root/sp-cert.pem and private key to /root/sp-key.pem
-  command: openssl req -new -nodes -x509 -subj "/C=FI/ST=Uusimaa/L=Espoo/O=CSC/CN=fd-harvester.csc.fi" -days 3650 -keyout "/root/sp-key.pem" -out "/root/sp-cert.pem" -extensions v3_ca creates="/root/sp-cert.pem"
-  when: deployment_environment_id not in ['production']
-
 - name: Set httpd ssl conf SSLCertificateFile
   lineinfile:
     dest: "/etc/httpd/conf.d/ssl.conf"
@@ -18,13 +14,12 @@
     regexp: "^SSLCertificateKeyFile /"
     line: "SSLCertificateKeyFile {{ ssl_certificate_key_file }}"
 
-- name: Set httpd ssl conf SSLCACertificateFile
+- name: Set httpd ssl conf SSLCertificateChainFile
   lineinfile:
     dest: "/etc/httpd/conf.d/ssl.conf"
     state: present
-    regexp: "^#?SSLCACertificateFile /"
-    line: "SSLCACertificateFile {{ ssl_ca_certificate_file }}"
-  when: deployment_environment_id in ['production']
+    regexp: "^#?SSLCertificateChainFile /"
+    line: "SSLCertificateChainFile {{ ssl_certificate_chain_file }}"
 
 - name: Restart httpd
   service: name=httpd state=restarted enabled=yes
